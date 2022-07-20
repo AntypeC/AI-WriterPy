@@ -1,95 +1,153 @@
 from tkinter import *
-from transformers import QuestionAnsweringPipeline, pipeline
+from transformers import QuestionAnsweringPipeline, pipeline # GPT-Neo is only available for PyTorch, not TensorFlow.
 from bs4 import BeautifulSoup
-from progress_bar import progress_bar
 import requests
 import json
-import sys
-import os
-
-question = ''
-context_input = ''
-response = ''
-topic = ''
+import re
 
 question_answerer = pipeline('question-answering')
 text_generation = pipeline('text-generation', model='EleutherAI/gpt-neo-125M')
 
+_width = 45
+
 class gui:
     def __init__(self, root):
         self.root = root
-        root.title("AIWriterPy by @antype")
+        root.title("AI Toolbox")
         root.geometry('{}x{}'.format(500, 600))
         root.configure(background="#16193B")
+        self.ai_tools = ai_tools
+
+        # self.status_code = 0
+
+        self.inquiry_input = Entry(width=_width) # input question
+        self.inquiry_input.insert(0, "Enter your question here...")
+
+        self.context_input = Entry(width=_width) # input url / written context
+        self.context_input.insert(0, "Source (url / written context)...")
+
+        self.question_answering_button = Button(text="Generate!")
+        self.question_answering_button.bind("<Button-1>", self.question_answering_buttonFunc)
+
+        self.sentence_starter_input = Entry(width=_width) # input topic for discussion
+        self.sentence_starter_input.insert(0, "Enter your chosen topic here...")
+
+        self.text_generation_button = Button(text="Generate!")
+        self.text_generation_button.bind("<Button-1>", self.text_generation_buttonFunc)
+
+        self.prompt = Text(root, height = 20, width = _width+10)
 
         self.greeting = Label(text="INS Homework Assistance", background="#16193B", width=30, height=5)
+        self.greeting.place(x=80, y=0)
         self.greeting.config(font =("Courier", 18))
 
-        self.option_question_answering = Button(text="Answer Extractor", width=12, height=2, command=self.question_answering)
-        self.option_text_generation = Button(text="Text Generation", width=12, height=2, command=self.text_generation)
-        self.clear_button = Button(text="Reset", width=12, height=2, command=self.restart_program)
+        self.option_question_answering = Button(text="Answer Extractor", width=12, height=2)
+        self.option_question_answering.place(x=20, y=100)
+        self.option_question_answering.bind("<Button-1>", self.genFuncGui1)
 
-        self.greeting.pack()
-        self.option_question_answering.pack()
-        self.option_text_generation.pack()
-        self.clear_button.pack()
+        self.option_text_generation = Button(text="Text Generation", width=12, height=2)
+        self.option_text_generation.place(x=170, y=100)
+        self.option_text_generation.bind("<Button-1>", self.genFuncGui2)
 
-    def question_answering(self): # question answerer
-        inquiry_input = Entry(width=60) # input topic
-        context_input = Entry(width=60) # input url / written context
+        self.clear_button = Button(text="Citation", width=12, height=2)
+        self.clear_button.place(x=320, y=100)
+        self.clear_button.bind("<Button-1>", self.citation)
 
-        inquiry_input.pack()
-        context_input.pack()
+    def genFuncGui1(self, *kwargs):
+        self.clearFunction()
+        self.inquiry_input.place(x=20, y=160)
+        self.context_input.place(x=20, y=190)
+        self.question_answering_button.place(x=160, y=230)
 
-        def generate_answer():
-            global question, context, response
-            question = inquiry_input.get()
-            url = context_input.get()
-            if 'http' in url:
-                r = requests.get(url)
-                soup = BeautifulSoup(r.content, 'html.parser')
-                context = soup.getText().replace("\n", "")     
-            else:
-                context = url
-            response = question_answerer({
-                'question': question,
-                'context': context
-            })
-            json_formatted_str = json.dumps(response, indent=2)
+    def genFuncGui2(self, *kwargs):
+        self.clearFunction()
+        self.sentence_starter_input.place(x=20, y=160)
+        self.text_generation_button.place(x=160, y=200)
 
-            answer = Text(root, height = 10, width = 60)
-            answer.pack()
-            answer.insert(END, json_formatted_str)
+    def output(self, pos_x, pos_y, feed, *kwargs):
+        if (self.prompt['state'] == DISABLED):
+            self.prompt['state'] = NORMAL
+        else:
+            self.prompt['state'] = NORMAL
+        self.prompt.place(x=pos_x, y=pos_y)
+        self.prompt.delete('1.0', END)
+        self.prompt.insert(END, feed)
+        self.prompt.config(state=DISABLED)
 
-            # return inquiry_input, context_input, answer
+    def question_answering_buttonFunc(self, *kwargs):
+        self.ai_tools.__contains__(context_feed=self.context_input.get(), question=self.inquiry_input.get())
+        self.output(pos_x=20, pos_y=270, feed=json_formatted_str)
 
-        Button(text="Generate!", command=generate_answer).pack()
+    def text_generation_buttonFunc(self, *kwargs):
+        self.ai_tools.text_generation(topic=self.sentence_starter_input.get())
+        self.output(pos_x=20, pos_y=240, feed=improvised_text)
 
+    def clearFunction(self, *kwargs):
+        self.inquiry_input.place_forget()
+        self.context_input.place_forget()
+        self.question_answering_button.place_forget()
+        self.sentence_starter_input.place_forget()
+        self.text_generation_button.place_forget()
+        self.prompt.place_forget()
 
-    def text_generation(self): # essay writer
-        sentence_starter_input = Entry(width=60) # input topic
-        sentence_starter_input.pack()
+    def citation(self, *kwargs):
+        self.clearFunction()
+        kv = re.compile(r'\b(?P<key>\w+)={(?P<value>[^}]+)}')
+        bibtex_file = """
+        @software{gpt-neo,
 
-        def generate_text():
-            global topic
-            topic = sentence_starter_input.get()
-            res = text_generation(topic, max_length=500, do_sample=True, temperature=0.9)
+        author       = {Black, Sid and
+                        Leo, Gao and
+                        Wang, Phil and
+                        Leahy, Connor and
+                        Biderman, Stella},
+        title        = {{GPT-Neo: Large Scale Autoregressive Language 
+                        Modeling with Mesh-Tensorflow}},
+        month        = mar,
+        year         = 2021,
+        note         = {{If you use this software, please cite it using 
+                        these metadata.}},
+        publisher    = {Zenodo},
+        version      = {1.0},
+        doi          = {10.5281/zenodo.5297715},
+        url          = {https://doi.org/10.5281/zenodo.5297715}
+        }
 
-            generated_text = Text(root, height = 10, width = 60)
-            generated_text.pack()
-            generated_text.insert(END, res[0]["generated_text"])
-            
-            # return sentence_starter_input, generated_text
-            
-        Button(text="Generate!", command=generate_text).pack()
+        @article{gao2020pile,
+        title={The Pile: An 800GB Dataset of Diverse Text for Language Modeling},
+        author={Gao, Leo and Biderman, Stella and Black, Sid and Golding, Laurence and Hoppe, Travis and Foster, Charles and Phang, Jason and He, Horace and Thite, Anish and Nabeshima, Noa and others},
+        journal={arXiv preprint arXiv:2101.00027},
+        year={2020}
+        }
+        """
+        json_formatted_bib = json.dumps(dict(kv.findall(bibtex_file)), indent=2)
+        self.output(pos_x=20, pos_y=160, feed=json_formatted_bib)
 
-    def restart_program(self):
-        """Restarts the current program.
-        Note: this function does not return. Any cleanup action (like
-        saving data) must be done before calling this function."""
-        python = sys.executable
-        os.execl(python, python, * sys.argv)
-        progress_bar(500)
+class ai_tools:
+    def __contains__(context_feed, question):
+
+    # def question_answering(context_feed, question, *kwargs):
+        global json_formatted_str
+
+        if 'http' in context_feed:
+            r = requests.get(context_feed)
+            soup = BeautifulSoup(r.content, 'html.parser')
+            context = soup.getText().replace("\n", "")     
+        else:
+            context = context_feed
+        response = question_answerer({
+            'question': question,
+            'context': context
+        })
+        json_formatted_str = json.dumps(response, indent=2)
+        
+
+    def text_generation(topic):
+        global improvised_text
+
+        res = text_generation(topic, max_length=500, do_sample=True, temperature=0.9)
+        improvised_text = res[0]["generated_text"]
+
 
 root = Tk()
 app = gui(root)
