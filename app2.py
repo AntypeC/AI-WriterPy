@@ -21,20 +21,12 @@ class gui:
         # self.status_code = 0
 
         self.inquiry_input = Entry(width=_width) # input question
-        self.temp_text = ["Enter your question here...", "Source (url / written context)...", "Enter your chosen topic here..."]
-        self.inquiry_input.insert(0, self.temp_text[0])
-        self.inquiry_input.bind("<FocusIn>", self.del_temp_text(self.inquiry_input))
-
         self.context_input = Entry(width=_width) # input url / written context
-        self.context_input.insert(0, self.temp_text[1])
-        self.context_input.bind("<FocusIn>", self.del_temp_text(self.context_input))
+        self.sentence_starter_input = Entry(width=_width) # input topic for discussion
+        self.temp_text()
 
         self.question_answering_button = Button(text="Generate!")
         self.question_answering_button.bind("<Button-1>", self.question_answering_buttonFunc)
-
-        self.sentence_starter_input = Entry(width=_width) # input topic for discussion
-        self.sentence_starter_input.insert(0, self.temp_text[2])
-        self.context_input.bind("<FocusIn>", self.del_temp_text(self.sentence_starter_input))
 
         self.text_generation_button = Button(text="Generate!")
         self.text_generation_button.bind("<Button-1>", self.text_generation_buttonFunc)
@@ -57,22 +49,32 @@ class gui:
         self.clear_button.place(x=320, y=100)
         self.clear_button.bind("<Button-1>", self.citation)
 
-    def del_temp_text(self, func):
-        if any(i in func.get() for i in self.temp_text):
-            func.delete(0, 'end')
+    def temp_text(self, *args, **kwargs):
+        def del_text1(*args, **kwargs):
+            self.inquiry_input.delete(0, 'end')
+        def del_text2(*args, **kwargs):
+            self.context_input.delete(0, 'end')
+        def del_text3(*args, **kwargs):
+            self.sentence_starter_input.delete(0, 'end')
+        self.inquiry_input.insert(0, "Enter your question here...")
+        self.context_input.insert(0, "Source (url / written context)...")
+        self.sentence_starter_input.insert(0, "Enter your chosen topic here...")
+        self.inquiry_input.bind('<FocusIn>', del_text1)
+        self.context_input.bind('<FocusIn>', del_text2)
+        self.sentence_starter_input.bind('<FocusIn>', del_text3)
 
-    def genFuncGui1(self, *kwargs):
+    def genFuncGui1(self, *args, **kwargs):
         self.clearFunction()
         self.inquiry_input.place(x=20, y=160)
         self.context_input.place(x=20, y=190)
         self.question_answering_button.place(x=160, y=230)
 
-    def genFuncGui2(self, *kwargs):
+    def genFuncGui2(self, *args, **kwargs):
         self.clearFunction()
         self.sentence_starter_input.place(x=20, y=160)
         self.text_generation_button.place(x=160, y=200)
 
-    def output(self, pos_x, pos_y, feed, *kwargs):
+    def output(self, pos_x, pos_y, feed, *args, **kwargs):
         if (self.prompt['state'] == DISABLED):
             self.prompt['state'] = NORMAL
         else:
@@ -82,15 +84,17 @@ class gui:
         self.prompt.insert(END, feed)
         self.prompt.config(state=DISABLED)
 
-    def question_answering_buttonFunc(self, *kwargs):
+    def question_answering_buttonFunc(self, *args, **kwargs):
         self.ai_tools.__contains__(context_feed=self.context_input.get(), question=self.inquiry_input.get())
         self.output(pos_x=20, pos_y=270, feed=json_formatted_str)
+        self.temp_text()
 
-    def text_generation_buttonFunc(self, *kwargs):
+    def text_generation_buttonFunc(self, *args, **kwargs):
         self.ai_tools.text_generation(topic=self.sentence_starter_input.get())
         self.output(pos_x=20, pos_y=240, feed=improvised_text)
+        self.temp_text()
 
-    def clearFunction(self, *kwargs):
+    def clearFunction(self, *args, **kwargs):
         self.inquiry_input.place_forget()
         self.context_input.place_forget()
         self.question_answering_button.place_forget()
@@ -98,7 +102,7 @@ class gui:
         self.text_generation_button.place_forget()
         self.prompt.place_forget()
 
-    def citation(self, *kwargs):
+    def citation(self, *args, **kwargs):
         self.clearFunction()
         kv = re.compile(r'\b(?P<key>\w+)={(?P<value>[^}]+)}')
         bibtex_file = """
