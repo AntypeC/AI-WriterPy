@@ -13,7 +13,7 @@ _width = 45
 class gui:
     def __init__(self, root):
         self.root = root
-        root.title("AI Toolbox")
+        root.title("INS Homework Automator")
         root.geometry('{}x{}'.format(500, 600))
         root.configure(background="#16193B")
         self.ai_tools = ai_tools
@@ -33,7 +33,7 @@ class gui:
 
         self.prompt = Text(root, height = 20, width = _width+10)
 
-        self.greeting = Label(text="INS Homework Assistance", background="#16193B", width=30, height=5)
+        self.greeting = Label(text="INS Homework Automator", background="#16193B", foreground="white", width=30, height=5)
         self.greeting.place(x=80, y=0)
         self.greeting.config(font =("Courier", 18))
 
@@ -50,18 +50,25 @@ class gui:
         self.clear_button.bind("<Button-1>", self.citation)
 
     def temp_text(self, *args, **kwargs):
+        self.intro = ['Enter your question here...', 'Source (url / written context)...', 'Enter your chosen topic here...', '']
         def del_text1(*args, **kwargs):
             self.inquiry_input.delete(0, 'end')
+        del_text1()
         def del_text2(*args, **kwargs):
             self.context_input.delete(0, 'end')
+        del_text2()
         def del_text3(*args, **kwargs):
             self.sentence_starter_input.delete(0, 'end')
-        self.inquiry_input.insert(0, "Enter your question here...")
-        self.context_input.insert(0, "Source (url / written context)...")
-        self.sentence_starter_input.insert(0, "Enter your chosen topic here...")
+        del_text3()
+        self.inquiry_input.insert(0, self.intro[0])
+        self.context_input.insert(0, self.intro[1])
+        self.sentence_starter_input.insert(0, self.intro[2])
         self.inquiry_input.bind('<FocusIn>', del_text1)
+        self.inquiry_input.bind('<BackSpace>', del_text1)
         self.context_input.bind('<FocusIn>', del_text2)
+        self.context_input.bind('<BackSpace>', del_text2)
         self.sentence_starter_input.bind('<FocusIn>', del_text3)
+        self.sentence_starter_input.bind('<BackSpace>', del_text3)
 
     def genFuncGui1(self, *args, **kwargs):
         self.clearFunction()
@@ -85,13 +92,19 @@ class gui:
         self.prompt.config(state=DISABLED)
 
     def question_answering_buttonFunc(self, *args, **kwargs):
-        self.ai_tools.__contains__(context_feed=self.context_input.get(), question=self.inquiry_input.get())
-        self.output(pos_x=20, pos_y=270, feed=json_formatted_str)
+        if self.context_input.get() in self.intro or self.inquiry_input.get() in self.intro:
+            self.output(pos_x=20, pos_y=270, feed='...')
+        else:
+            self.ai_tools.__contains__(context_feed=self.context_input.get(), question=self.inquiry_input.get())
+            self.output(pos_x=20, pos_y=270, feed=json_formatted_str)
         self.temp_text()
 
     def text_generation_buttonFunc(self, *args, **kwargs):
-        self.ai_tools.text_generation(topic=self.sentence_starter_input.get())
-        self.output(pos_x=20, pos_y=240, feed=improvised_text)
+        if self.sentence_starter_input.get() in self.intro:
+            self.output(pos_x=20, pos_y=240, feed='...')
+        else:
+            self.ai_tools.text_generation(topic=self.sentence_starter_input.get())
+            self.output(pos_x=20, pos_y=240, feed=improvised_text)
         self.temp_text()
 
     def clearFunction(self, *args, **kwargs):
