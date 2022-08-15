@@ -97,8 +97,8 @@ class gui:
     def clearFunction(self, *args, **kwargs):
         self.inquiry_input.place_forget()
         self.context_input.place_forget()
-        self.question_answering_button.place_forget()
         self.sentence_starter_input.place_forget()
+        self.question_answering_button.place_forget()
         self.text_generation_button.place_forget()
         self.prompt.place_forget()
 
